@@ -1,0 +1,39 @@
+version: '2'
+
+networks:
+  app-tier:
+    driver: bridge
+
+services:
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - app-tier
+  kafka:
+    image: 'bitnami/kafka:latest'
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+    ports:
+      - 9092:9092
+    networks:
+      - app-tier
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    networks:
+      - app-tier
+    ports:
+      - 8080:8080
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+  fluentd:
+    image: fluentd-debian-kafka2-to-minio
+    networks:
+      - app-tier
+    environment:
+      - FLUENT_KAFKA2_BROKERS=kafka:9092
+      - FLUENT_KAFKA2_CONSUME_GROUP=fluentd-group
+      - FLUENT_KAFKA2_TOPICS=abc
